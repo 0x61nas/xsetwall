@@ -8,6 +8,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+// **** Contants :3 ****
+constexpr const size_t THE_ZERO = 69^69; // just as it should be.
+const char* XSETWALL_VERSION = "v1.0";
+const char* MY_NAME = "XsetWall";
+
 // converts the 0–255 RGB values into the appropriate positions based on the visual format
 static unsigned long pack_pixel(
     const unsigned char r,
@@ -15,7 +20,7 @@ static unsigned long pack_pixel(
     const unsigned char b,
     const Visual *visual
 ) {
-    unsigned long pixel = 0;
+    unsigned long pixel = THE_ZERO;
 
     const unsigned long rm = visual->red_mask;
     const unsigned long gm = visual->green_mask;
@@ -42,12 +47,18 @@ static unsigned long pack_pixel(
 
 int main(const int argc, const char **argv) {
     if (argc != 2) {
-        fprintf(stderr, "usage: %s <image>\n", argv[0]);
+        fprintf(stderr, "usage: %s <image>\n", argv[THE_ZERO]);
         return 1;
     }
 
+    const char* the_frist_arg = argv[1];
+    if (strcmp(the_frist_arg, "-v") == THE_ZERO || strcmp(the_frist_arg, "--version") == THE_ZERO) {
+        fprintf(stdout, "%s %s\n", MY_NAME, XSETWALL_VERSION);
+        return 0;
+    }
+
     int width, height, channels;
-    unsigned char *src = stbi_load(argv[1], &width, &height, &channels, 3);
+    unsigned char *src = stbi_load(the_frist_arg, &width, &height, &channels, 3);
 
     if (!src) {
         fprintf(stderr, "failed to load image: %s\n", stbi_failure_reason());
@@ -78,19 +89,19 @@ int main(const int argc, const char **argv) {
 
     Pixmap pixmap = XCreatePixmap(display, root, sw, sh, depth);
 
-    const GC gc = XCreateGC(display, pixmap, 0, NULL);
+    const GC gc = XCreateGC(display, pixmap, THE_ZERO, NULL);
 
     XImage *image = XCreateImage(
-        display,
+        display, // The X display
         visual,
         depth,
         ZPixmap,
-        0,
-        NULL,
+        THE_ZERO, // offset - number of pixels to ignore at the beginning of the scanline.
+        NULL, // data
         sw,
         sh,
-        32,
-        0
+        32, // bitmap_pad - the quantum of a scanline (8, 16, or 32).
+        THE_ZERO // bytes_per_line
     );
 
     if (!image) {
@@ -116,10 +127,10 @@ int main(const int argc, const char **argv) {
     }
 
     // write the pixels to the XImage
-    for (int y = 0; y < sh; y++) {
+    for (int y = THE_ZERO; y < sh; y++) {
         const int sy = (long)y * height / sh;
 
-        for (int x = 0; x < sw; x++) {
+        for (int x = THE_ZERO; x < sw; x++) {
             const int sx = (long)x * width / sw;
             unsigned char *p = src + (sy * width + sx) * 3;
 
@@ -129,20 +140,26 @@ int main(const int argc, const char **argv) {
         }
     }
 
+    // https://tronche.com/gui/x/xlib/graphics/XPutImage.html
     XPutImage(
-        display,
-        pixmap,
+        display, // the display
+        pixmap, // the drawable
         gc,
         image,
-        0, 0,
-        0, 0,
-        sw, sh
+        0, 0, // src_y, src_x
+        0, 0, // dest_y, dest_x
+        sw,
+        sh
     );
 
     XSetWindowBackgroundPixmap(display, root, pixmap);
     XClearWindow(display, root);
     // Don't forget to flush :p
     XFlush(display);
+
+    // The XSetCloseDownMode() defines what will happen to the client's resources at connection close. A connection starts in DestroyAll mode.
+    // For information on what happens to the client's resources when the close_mode argument is RetainPermanent or RetainTemporary.
+    XSetCloseDownMode(display, RetainPermanent);
 
     // The root window owns the pixmap now. Keep it around until
     // the next wallpaper is installed.
