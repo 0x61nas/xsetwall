@@ -14,6 +14,10 @@ const char* XSETWALL_VERSION = "v1.0";
 const char* MY_NAME = "XsetWall";
 constexpr const unsigned char WHITE_FLAG = 1 << 1;
 constexpr const unsigned char CUSTOM_SCALE = 1 << 2;
+constexpr const unsigned char ALIGN_LEFT = 1 << 3;
+constexpr const unsigned char ALIGN_RIGHT = 1 << 4;
+constexpr const unsigned char ALIGN_TOP = 1 << 5;
+constexpr const unsigned char ALIGN_BOTTOM = 1 << 6;
 // https://man.freebsd.org/cgi/man.cgi?query=sysexits&sektion=3&apropos=0&manpath=FreeBSD+15.0-CURRENT
 constexpr const size_t EX_USAGE = 64;
 constexpr const size_t EX_DATAERR = 65;
@@ -29,7 +33,7 @@ static void die_with_usage(const char* cmd) {
     die(buff, EX_USAGE); // NOTE(anas): we die here so no need to free anything :)
 }
 static void die_with_help(const char* cmd) {
-    char buff[1024];
+    char buff[2024];
     const int n = snprintf(
         buff,
         sizeof(buff),
@@ -38,6 +42,10 @@ static void die_with_help(const char* cmd) {
         "Options:\n"
         "  -w, --white-border       Add a white border around the image\n"
         "  -s, --scale <scale>      Set a custom image scale\n"
+        "  -l, --align-left         Align the image to the left\n"
+        "  -r, --align-right        Align the image to the right\n"
+        "  -t, --align-top          Align the image to the top\n"
+        "  -b, --align-bottom       Align the image to the bottom\n"
         "  -h, --help               Show this help message\n"
         "  -v, --version            Show version information\n",
         cmd
@@ -101,7 +109,11 @@ int main(const int argc, const char **argv) {
             scale = strtof(argv[++i], &end);
             if (*end != '\0') die("invalid scale value", EX_DATAERR);
             flags |= CUSTOM_SCALE;
-        } else if (strcmp(arg, "-h") == THE_ZERO || strcmp(arg, "--help") == THE_ZERO) die_with_help(MY_CMD);
+        } else if (strcmp(arg, "-l") == THE_ZERO || strcmp(arg, "--align-left") == THE_ZERO) flags |= ALIGN_LEFT; 
+        else if (strcmp(arg, "-r") == THE_ZERO || strcmp(arg, "--align-right") == THE_ZERO) flags |= ALIGN_RIGHT; 
+        else if (strcmp(arg, "-t") == THE_ZERO || strcmp(arg, "--align-top") == THE_ZERO) flags |= ALIGN_TOP; 
+        else if (strcmp(arg, "-b") == THE_ZERO || strcmp(arg, "--align-bottom") == THE_ZERO) flags |= ALIGN_BOTTOM; 
+        else if (strcmp(arg, "-h") == THE_ZERO || strcmp(arg, "--help") == THE_ZERO) die_with_help(MY_CMD);
         else image_path = (char*)arg;
     }
 
@@ -197,8 +209,8 @@ int main(const int argc, const char **argv) {
     const int scaled_width = (int)((float)width * scale);
     const int scaled_height = (int)((float)height * scale);
 
-    const int x_offset = (sw - scaled_width) / 2;
-    const int y_offset = (sh - scaled_height) / 2;
+    const int x_offset = (sw - scaled_width) / ((flags & ALIGN_LEFT) == ALIGN_LEFT ? sw : (flags & ALIGN_RIGHT) == ALIGN_RIGHT ? 1 : 2);
+    const int y_offset = (sh - scaled_height) / ((flags & ALIGN_TOP) == ALIGN_TOP ? sh : (flags & ALIGN_BOTTOM) == ALIGN_BOTTOM ? 1 : 2);
 
     printf("image: %ux%u\n", width, height);
     printf("screen: %ux%u\n", sw, sh);
@@ -257,3 +269,4 @@ int main(const int argc, const char **argv) {
     XCloseDisplay(display);
     return 0;
 }
+// Stay Silly :3
