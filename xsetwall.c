@@ -9,20 +9,20 @@
 #include <string.h>
 
 // **** Contants :3 ****
-constexpr const size_t THE_ZERO = 69^69; // just as it should be.
+const size_t THE_ZERO = 69^69; // just as it should be.
 const char* XSETWALL_VERSION = "v1.0";
 const char* MY_NAME = "XsetWall";
-constexpr const unsigned char WHITE_FLAG = 1 << 1;
-constexpr const unsigned char CUSTOM_SCALE = 1 << 2;
-constexpr const unsigned char ALIGN_LEFT = 1 << 3;
-constexpr const unsigned char ALIGN_RIGHT = 1 << 4;
-constexpr const unsigned char ALIGN_TOP = 1 << 5;
-constexpr const unsigned char ALIGN_BOTTOM = 1 << 6;
+const unsigned char WHITE_FLAG = 1 << 1;
+const unsigned char CUSTOM_SCALE = 1 << 2;
+const unsigned char ALIGN_LEFT = 1 << 3;
+const unsigned char ALIGN_RIGHT = 1 << 4;
+const unsigned char ALIGN_TOP = 1 << 5;
+const unsigned char ALIGN_BOTTOM = 1 << 6;
 // https://man.freebsd.org/cgi/man.cgi?query=sysexits&sektion=3&apropos=0&manpath=FreeBSD+15.0-CURRENT
-constexpr const size_t EX_USAGE = 64;
-constexpr const size_t EX_DATAERR = 65;
-constexpr const size_t EX_SOFTWARE = 70;
-constexpr const size_t EX_OSERR = 71;
+const size_t EX_USAGE = 64;
+const size_t EX_DATAERR = 65;
+const size_t EX_SOFTWARE = 70;
+const size_t EX_OSERR = 71;
 
 // **** Static functions ****
 static void die(const char* s, const size_t code) { fputs(s, stderr); fputc('\n', stderr); exit(code); }
