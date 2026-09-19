@@ -1,0 +1,105 @@
+.TH XSETWALL 1 "September 2026" "xsetwall 1.0" "User Commands"
+.SH NAME
+xsetwall - set an X11 wallpaper from an image
+.SH SYNOPSIS
+.B xsetwall
+.RB [ -w | --white-border ]
+.RB [ -s | --scale " scale" ]
+.I image
+.SH DESCRIPTION
+.B xsetwall
+sets the desktop wallpaper using an image on an X11 display.
+
+The image is scaled to fit the screen while preserving its aspect ratio.
+The resulting image is centered on the screen.
+
+.SH OPTIONS
+.TP
+.BR -w ", " --white-border
+Fill the unused area around the scaled image with white.
+
+Without this option, the unused area is left black.
+
+.TP
+.BI -s " scale"
+.BR --scale = scale
+Set a custom image scale factor.
+
+The scale must be a positive floating-point number.
+
+For example, a scale of
+.B 0.5
+renders the image at half of its original dimensions.
+
+.SH EXAMPLES
+.TP
+.B xsetwall wallpaper.jpg
+Set
+.B wallpaper.jpg
+as the wallpaper using automatic scaling.
+
+.TP
+.B xsetwall -w wallpaper.png
+Set the wallpaper and fill unused space with white.
+
+.TP
+.B xsetwall --white-border wallpaper.png
+Equivalent to the previous example using the long option.
+
+.TP
+.B xsetwall -s 0.5 wallpaper.jpg
+Scale the image to 50% of its original size.
+
+.TP
+.B xsetwall --scale 0.25 wallpaper.jpg
+Scale the image to 25% of its original size.
+
+.TP
+.B xsetwall -w -s 0.75 wallpaper.png
+Scale the image to 75% and fill unused space with white.
+
+.SH NOTES
+The program requires an X11 display.
+
+Automatic scaling is calculated from the dimensions of the image and the screen.
+
+.SH EXIT STATUS
+.TP
+.B 0
+Success.
+
+.TP
+.B 64
+Invalid command-line usage.
+
+.TP
+.B 65
+The input image contains invalid or inappropriate data.
+
+.TP
+.B 70
+An internal software error occurred.
+
+.TP
+.B 71
+An operating-system error occurred.
+
+.SH ENVIRONMENT
+.TP
+.B DISPLAY
+Specifies the X11 display to use.
+
+.SH SEE ALSO
+.BR X (7)
+.BR sysexits (3)
+
+.SH AUTHOR
+Anas Elgarhy <anas.elgarhy.dev at gmail dot com>
+.SH COPYRIGHT
+Copyright (co 2026 Anas Elgarhy.
+License information should be provided by the distribution.
+.SH BUGS
+Report bugs to the project's issue tracker.
+.SH COLOPHON
+This manual page was written for
+.B xsetwall.
