@@ -24,13 +24,13 @@ constexpr const size_t EX_OSERR = 71;
 static void die(const char* s, const size_t code) { fputs(s, stderr); fputc('\n', stderr); exit(code); }
 static void die_with_usage(const char* cmd) {
     char buff[256];
-    const unsigned int n = snprintf(buff, sizeof(buff), "usage: %s [-w] [-s custom-scale] <image>\n", cmd);
+    const int n = snprintf(buff, sizeof(buff), "usage: %s [-w] [-s custom-scale] <image>\n", cmd);
     if (n < 0) die("failed to format help message", EX_SOFTWARE);
     die(buff, EX_USAGE); // NOTE(anas): we die here so no need to free anything :)
 }
 static void die_with_help(const char* cmd) {
     char buff[1024];
-    const unsigned int n = snprintf(
+    const int n = snprintf(
         buff,
         sizeof(buff),
         "usage: %s [-w|--white-border] [-s|--scale <custom-scale>] <image>\n"
