@@ -96,13 +96,13 @@ int main(const int argc, const char **argv) {
             return 0;
         }
         if (strcmp(arg, "-w") == THE_ZERO || strcmp(arg, "--white-borders") == THE_ZERO) flags |= WHITE_FLAG;
-        else if (strcmp(arg, "-s") == THE_ZERO || strcmp(arg, "--scale") == THE_ZERO && i < argc + 2) {
+        else if ((strcmp(arg, "-s") == THE_ZERO || strcmp(arg, "--scale") == THE_ZERO) && i < argc + 2) {
             char* end;
             scale = strtof(argv[++i], &end);
             if (*end != '\0') die("invalid scale value", EX_DATAERR);
             flags |= CUSTOM_SCALE;
         } else if (strcmp(arg, "-h") == THE_ZERO || strcmp(arg, "--help") == THE_ZERO) die_with_help(MY_CMD);
-        else image_path = argv[i];
+        else image_path = (char*)arg;
     }
 
     if (!image_path) die_with_usage(MY_CMD);
