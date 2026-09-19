@@ -5,6 +5,10 @@ xsetwall - set an X11 wallpaper from an image
 .B xsetwall
 .RB [ -w | --white-border ]
 .RB [ -s | --scale " scale" ]
+.RB [ \-l | \-\-align\-left ]
+.RB [ \-r | \-\-align\-right ]
+.RB [ \-t | \-\-align\-top ]
+.RB [ \-b | \-\-align\-bottom ]
 .I image
 .SH DESCRIPTION
 .B xsetwall
@@ -12,6 +16,10 @@ sets the desktop wallpaper using an image on an X11 display.
 
 The image is scaled to fit the screen while preserving its aspect ratio.
 The resulting image is centered on the screen.
+
+By default, the image is centered on the screen.
+Alignment options can be used to position the scaled image against an edge
+of the screen.
 
 .SH OPTIONS
 .TP
@@ -30,6 +38,22 @@ The scale must be a positive floating-point number.
 For example, a scale of
 .B 0.5
 renders the image at half of its original dimensions.
+
+.TP
+.BR \-l ", " \-\-align\-left
+Align the image to the left side of the screen.
+
+.TP
+.BR \-r ", " \-\-align\-right
+Align the image to the right side of the screen.
+
+.TP
+.BR \-t ", " \-\-align\-top
+Align the image to the top of the screen.
+
+.TP
+.BR \-b ", " \-\-align\-bottom
+Align the image to the bottom of the screen.
 
 .SH EXAMPLES
 .TP
@@ -51,12 +75,29 @@ Equivalent to the previous example using the long option.
 Scale the image to 50% of its original size.
 
 .TP
-.B xsetwall --scale 0.25 wallpaper.jpg
-Scale the image to 25% of its original size.
-
-.TP
 .B xsetwall -w -s 0.75 wallpaper.png
 Scale the image to 75% and fill unused space with white.
+
+.TP
+.B xsetwall \-s 0.5 wallpaper.jpg
+Scale the image to 50% of its original size and center it on the screen.
+Centering is the default alignment mode.
+
+.TP
+.B xsetwall \-s 0.5 \-l wallpaper.jpg
+Scale the image to 50% of its original size and align it to the left side of the screen.
+
+.TP
+.B xsetwall \-s 0.5 \-r wallpaper.jpg
+Scale the image to 50% of its original size and align it to the right side of the screen.
+
+.TP
+.B xsetwall \-s 0.5 \-t wallpaper.jpg
+Scale the image to 50% of its original size and align it to the top of the screen.
+
+.TP
+.B xsetwall \-s 0.5 \-b wallpaper.jpg
+Scale the image to 50% of its original size and align it to the bottom of the screen.
 
 .SH NOTES
 The program requires an X11 display.
