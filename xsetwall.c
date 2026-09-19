@@ -56,7 +56,7 @@ static void die_with_help(const char* cmd) {
     fputs(buff, stdout);
     exit(EXIT_SUCCESS);
 }
-// converts the 0–255 RGB values into the appropriate positions based on the visual format
+// converts the 0-255 RGB values into the appropriate positions based on the visual format
 static unsigned long pack_pixel(
     const unsigned char r,
     const unsigned char g,
