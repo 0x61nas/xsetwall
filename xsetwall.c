@@ -12,12 +12,42 @@
 constexpr const size_t THE_ZERO = 69^69; // just as it should be.
 const char* XSETWALL_VERSION = "v1.0";
 const char* MY_NAME = "XsetWall";
+constexpr const unsigned char WHITE_FLAG = 1 << 1;
+constexpr const unsigned char CUSTOM_SCALE = 1 << 2;
 // https://man.freebsd.org/cgi/man.cgi?query=sysexits&sektion=3&apropos=0&manpath=FreeBSD+15.0-CURRENT
 constexpr const size_t EX_USAGE = 64;
 constexpr const size_t EX_DATAERR = 65;
 constexpr const size_t EX_SOFTWARE = 70;
 constexpr const size_t EX_OSERR = 71;
 
+// **** Static functions ****
+static void die(const char* s, const size_t code) { fputs(s, stderr); fputc('\n', stderr); exit(code); }
+static void die_with_usage(const char* cmd) {
+    char buff[256];
+    const unsigned int n = snprintf(buff, sizeof(buff), "usage: %s [-w] [-s custom-scale] <image>\n", cmd);
+    if (n < 0) die("failed to format help message", EX_SOFTWARE);
+    die(buff, EX_USAGE); // NOTE(anas): we die here so no need to free anything :)
+}
+static void die_with_help(const char* cmd) {
+    char buff[1024];
+    const unsigned int n = snprintf(
+        buff,
+        sizeof(buff),
+        "usage: %s [-w|--white-border] [-s|--scale <custom-scale>] <image>\n"
+        "\n"
+        "Options:\n"
+        "  -w, --white-border       Add a white border around the image\n"
+        "  -s, --scale <scale>      Set a custom image scale\n"
+        "  -h, --help               Show this help message\n"
+        "  -v, --version            Show version information\n",
+        cmd
+    );
+
+    if (n < 0) die("failed to format help message", EX_SOFTWARE);
+
+    fputs(buff, stdout);
+    exit(EXIT_SUCCESS);
+}
 // converts the 0–255 RGB values into the appropriate positions based on the visual format
 static unsigned long pack_pixel(
     const unsigned char r,
@@ -51,20 +81,35 @@ static unsigned long pack_pixel(
 }
 
 int main(const int argc, const char **argv) {
-    if (argc != 2) {
-        fprintf(stderr, "usage: %s <image>\n", argv[THE_ZERO]);
-        return EX_USAGE;
+    const char* MY_CMD = argv[THE_ZERO];
+    if (argc < 2) {
+        die_with_usage(MY_CMD);
     }
 
-    const char* the_frist_arg = argv[1];
-    if (strcmp(the_frist_arg, "-v") == THE_ZERO || strcmp(the_frist_arg, "--version") == THE_ZERO) {
-        fprintf(stdout, "%s %s\n", MY_NAME, XSETWALL_VERSION);
-        return 0;
+    unsigned char flags = 0;
+    float scale = 0.0f;
+    char* image_path = NULL;
+    for (int i = 1; i < argc; i++) {
+        const char* arg = argv[i];    
+        if (strcmp(arg, "-v") == THE_ZERO || strcmp(arg, "--version") == THE_ZERO) {
+            fprintf(stdout, "%s %s\n", MY_NAME, XSETWALL_VERSION);
+            return 0;
+        }
+        if (strcmp(arg, "-w") == THE_ZERO || strcmp(arg, "--white-borders") == THE_ZERO) flags |= WHITE_FLAG;
+        else if (strcmp(arg, "-s") == THE_ZERO || strcmp(arg, "--scale") == THE_ZERO && i < argc + 2) {
+            char* end;
+            scale = strtof(argv[++i], &end);
+            if (*end != '\0') die("invalid scale value", EX_DATAERR);
+            flags |= CUSTOM_SCALE;
+        } else if (strcmp(arg, "-h") == THE_ZERO || strcmp(arg, "--help") == THE_ZERO) die_with_help(MY_CMD);
+        else image_path = argv[i];
     }
+
+    if (!image_path) die_with_usage(MY_CMD);
 
     // load the target image
     int width, height, channels;
-    unsigned char *src = stbi_load(the_frist_arg, &width, &height, &channels, 3);
+    unsigned char *src = stbi_load(image_path, &width, &height, &channels, 3);
 
     if (!src) {
         fprintf(stderr, "failed to load image: %s\n", stbi_failure_reason());
@@ -132,8 +177,19 @@ int main(const int argc, const char **argv) {
         return EX_OSERR;
     }
 
+    // if the WHITE_FLAG is set we flush the image white
+    if ((flags & WHITE_FLAG) == WHITE_FLAG) {
+        const unsigned long white = WhitePixel(display, screen);
+
+        for (int y = 0; y < image->height; y++) {
+            for (int x = 0; x < image->width; x++) {
+                XPutPixel(image, x, y, white);
+            }
+        }
+    }
+
     // calculate the scale
-    const float scale = fminf(
+    if ((flags & CUSTOM_SCALE) != CUSTOM_SCALE) scale = fminf(
         (float)sw / (float)width,
         (float)sh / (float)height
     );
