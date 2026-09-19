@@ -12,6 +12,11 @@
 constexpr const size_t THE_ZERO = 69^69; // just as it should be.
 const char* XSETWALL_VERSION = "v1.0";
 const char* MY_NAME = "XsetWall";
+// https://man.freebsd.org/cgi/man.cgi?query=sysexits&sektion=3&apropos=0&manpath=FreeBSD+15.0-CURRENT
+constexpr const size_t EX_USAGE = 64;
+constexpr const size_t EX_DATAERR = 65;
+constexpr const size_t EX_SOFTWARE = 70;
+constexpr const size_t EX_OSERR = 71;
 
 // converts the 0–255 RGB values into the appropriate positions based on the visual format
 static unsigned long pack_pixel(
@@ -48,7 +53,7 @@ static unsigned long pack_pixel(
 int main(const int argc, const char **argv) {
     if (argc != 2) {
         fprintf(stderr, "usage: %s <image>\n", argv[THE_ZERO]);
-        return 1;
+        return EX_USAGE;
     }
 
     const char* the_frist_arg = argv[1];
@@ -63,14 +68,14 @@ int main(const int argc, const char **argv) {
 
     if (!src) {
         fprintf(stderr, "failed to load image: %s\n", stbi_failure_reason());
-        return 1;
+        return EX_DATAERR;
     }
 
     Display *display = XOpenDisplay(NULL);
     if (!display) {
         fprintf(stderr, "failed to open X display\n");
         stbi_image_free(src);
-        return 1;
+        return EX_OSERR;
     }
 
     const int screen = DefaultScreen(display);
@@ -82,7 +87,7 @@ int main(const int argc, const char **argv) {
         fprintf(stderr, "only TrueColor visuals are supported\n");
         XCloseDisplay(display);
         stbi_image_free(src);
-        return 1;
+        return EX_OSERR;
     }
 
     const int sw = DisplayWidth(display, screen);
@@ -111,7 +116,7 @@ int main(const int argc, const char **argv) {
         XFreePixmap(display, pixmap);
         XCloseDisplay(display);
         stbi_image_free(src);
-        return 1;
+        return EX_SOFTWARE;
     }
 
     image->data = calloc(1, image->bytes_per_line * sh);
@@ -124,7 +129,7 @@ int main(const int argc, const char **argv) {
         XFreePixmap(display, pixmap);
         XCloseDisplay(display);
         stbi_image_free(src);
-        return 1;
+        return EX_OSERR;
     }
 
     // calculate the scale
