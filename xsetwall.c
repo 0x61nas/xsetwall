@@ -57,6 +57,7 @@ int main(const int argc, const char **argv) {
         return 0;
     }
 
+    // load the target image
     int width, height, channels;
     unsigned char *src = stbi_load(the_frist_arg, &width, &height, &channels, 3);
 
@@ -126,13 +127,38 @@ int main(const int argc, const char **argv) {
         return 1;
     }
 
-    // write the pixels to the XImage
-    for (int y = THE_ZERO; y < sh; y++) {
-        const int sy = (long)y * height / sh;
+    // calculate the scale
+    const float scale = fminf(
+        (float)sw / (float)width,
+        (float)sh / (float)height
+    );
 
-        for (int x = THE_ZERO; x < sw; x++) {
-            const int sx = (long)x * width / sw;
-            unsigned char *p = src + (sy * width + sx) * 3;
+    const int scaled_width = (int)((float)width * scale);
+    const int scaled_height = (int)((float)height * scale);
+
+    const int x_offset = (sw - scaled_width) / 2;
+    const int y_offset = (sh - scaled_height) / 2;
+
+    printf("image: %ux%u\n", width, height);
+    printf("screen: %ux%u\n", sw, sh);
+    printf("scale: %f\n", scale);
+    printf("scaled: %dx%d\n", scaled_width, scaled_height);
+    printf("offset: %dx%d\n", x_offset, y_offset);
+
+    // write the pixels to the XImage
+    for (int y = 0; y < sh; y++) {
+        const int sy = (int)((y - y_offset) / scale);
+
+        if (sy < 0 || sy >= (int)height) continue;
+
+        for (int x = 0; x < sw; x++) {
+            const int sx = (int)((x - x_offset) / scale);
+
+            if (sx < 0 || sx >= (int)width) continue;
+
+            const size_t index = ((size_t)sy * width + sx) * 3;
+
+            const unsigned char *p = src + index;
 
             const unsigned long pixel = pack_pixel(p[0], p[1], p[2], visual);
 
