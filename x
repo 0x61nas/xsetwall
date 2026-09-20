@@ -24,6 +24,7 @@ Usage: x <command> [args]
 
 Commands:
   build [extra cc flags]    Build xsetwall.c
+  build-musl [extra flags]  Build xsetwall.c (musl, via docker/alpine)
   push [flags] [branch]     Push branch to all remotes (default: -u aurora)
   push-tags                 Push tags to all remotes
   clean                     Remove untracked files and directories
@@ -59,6 +60,27 @@ build() {
     [[ ${#extra_flags[@]} -eq 0 ]] && extra_flags=("-O3")
     info 'Building xsetwall...'
     echo_nd_run "$CC" -Wall -Wextra "$extra_flags" -o xsetwall xsetwall.c -lX11 -lm
+}
+
+build-musl() {
+    local extra_flags=()
+
+    for arg in "$@"; do
+        extra_flags+=("$arg")
+    done
+
+    [[ ${#extra_flags[@]} -eq 0 ]] && extra_flags=("-O3")
+
+    if command -v docker >/dev/null 2>&1; then
+        local sh_cmd
+        sh_cmd="apk add --no-cache build-base libx11-dev && gcc -Wall -Wextra ${extra_flags[*]} -o xsetwall-musl xsetwall.c -lX11 -lm"
+        info 'Building xsetwall (musl, via docker/alpine)...'
+        echo_nd_run docker run --rm -v "$PWD:/src" -w /src alpine:latest sh -c "$sh_cmd"
+    else
+        local CC="${CC:-musl-gcc}"
+        info 'Building xsetwall (musl)...'
+        echo_nd_run "$CC" -Wall -Wextra "$extra_flags" -o xsetwall-musl xsetwall.c -lX11 -lm
+    fi
 }
 
 print-remotes() {
@@ -152,6 +174,7 @@ shift
 case $arg in
     help|h|--help|-h) usage ;;
     b|build) build "$@";;
+    build-musl|bm) build-musl "$@";;
     print-remotes|pr) print-remotes ;;
     setup-remotes|sr) setup-remotes ;;
     push|p) push "$@" ;;
