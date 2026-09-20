@@ -19,15 +19,13 @@ jobs:
 
       - name: Build for GNU (gcc/glibc)
         run: |
-          mkdir -p build
-          gcc -Wall -Wextra -O3 -o build/xsetwall-x86_64-linux-gnu xsetwall.c -lX11 -lm
+          ./x build
+          mkdir -p build && mv xsetwall build/xsetwall-x86_64-linux-gnu
 
       - name: Build for musl
         run: |
-          docker run --rm -v "$PWD:/src" -w /src alpine:latest sh -c '
-            apk add --no-cache build-base libx11-dev
-            gcc -Wall -Wextra -O3 -o build/xsetwall-x86_64-linux-musl xsetwall.c -lX11 -lm
-          '
+          ./x build-musl
+          mv xsetwall-musl build/xsetwall-x86_64-linux-musl
 
       - uses: softprops/action-gh-release@v3
         with:
