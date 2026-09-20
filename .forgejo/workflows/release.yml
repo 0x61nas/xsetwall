@@ -1,0 +1,70 @@
+name: Create a Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: anas-local-action-runner
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y jq curl libx11-dev
+
+      - name: Build for GNU (gcc/glibc)
+        run: |
+          ./x build
+          mkdir -p build && mv xsetwall build/xsetwall-x86_64-linux-gnu
+
+      - name: Build for musl
+        run: |
+          ./x build-musl
+          mv xsetwall-musl build/xsetwall-x86_64-linux-musl
+
+      - name: Create release
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          API_URL: ${{ github.api_url || format('{0}/api/v1', github.server_url) }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          echo "Creating release for tag ${TAG}..."
+          RESPONSE=$(curl -sS -w "\n%{http_code}" \
+            -X POST \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/json" \
+            "${API_URL}/repos/${{ github.repository }}/releases" \
+            -d "$(jq -n --arg tag "$TAG" --arg notes "$TAG" '{tag_name: $tag, name: $tag, body: "Release \($tag)"}')")
+
+          HTTP_CODE="$(echo "$RESPONSE" | tail -1)"
+          BODY="$(echo "$RESPONSE" | sed '$d')"
+
+          if [ "$HTTP_CODE" != "201" ]; then
+            echo "Failed to create release. HTTP $HTTP_CODE"
+            echo "$BODY"
+            exit 1
+          fi
+
+          UPLOAD_URL="$(echo "$BODY" | jq -r '.upload_url' | sed 's/{?name,.*}//')"
+          echo "upload_url=${UPLOAD_URL}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload xsetwall binaries
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for file in build/xsetwall-*; do
+            filename="$(basename "$file")"
+            curl -sS -w "\n%{http_code}" \
+              -X POST \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "Accept: application/json" \
+              -F "attachment=@${file}" \
+              "${{ steps.create_release.outputs.upload_url }}?name=${filename}"
+          done
