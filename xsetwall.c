@@ -147,8 +147,8 @@ int main(const int argc, const char **argv) {
         return EX_OSERR;
     }
 
-    const int sw = DisplayWidth(display, screen);
-    const int sh = DisplayHeight(display, screen);
+    const unsigned int sw = DisplayWidth(display, screen);
+    const unsigned int sh = DisplayHeight(display, screen);
 
     Pixmap pixmap = XCreatePixmap(display, root, sw, sh, depth);
 
@@ -206,11 +206,13 @@ int main(const int argc, const char **argv) {
         (float)sh / (float)height
     );
 
-    const int scaled_width = (int)((float)width * scale);
-    const int scaled_height = (int)((float)height * scale);
+    if (scale <= 0.0f) die("invalid scale value", EX_DATAERR);
 
-    const int x_offset = (sw - scaled_width) / ((flags & ALIGN_LEFT) == ALIGN_LEFT ? sw : (flags & ALIGN_RIGHT) == ALIGN_RIGHT ? 1 : 2);
-    const int y_offset = (sh - scaled_height) / ((flags & ALIGN_TOP) == ALIGN_TOP ? sh : (flags & ALIGN_BOTTOM) == ALIGN_BOTTOM ? 1 : 2);
+    const unsigned int scaled_width = (int)((float)width * scale);
+    const unsigned int scaled_height = (int)((float)height * scale);
+
+    const int x_offset = ((int)sw - (int)scaled_width) / ((flags & ALIGN_LEFT) == ALIGN_LEFT ? (int)sw : (flags & ALIGN_RIGHT) == ALIGN_RIGHT ? 1 : 2);
+    const int y_offset = ((int)sh - (int)scaled_height) / ((flags & ALIGN_TOP) == ALIGN_TOP ? (int)sh : (flags & ALIGN_BOTTOM) == ALIGN_BOTTOM ? 1 : 2);
 
     printf("image: %ux%u\n", width, height);
     printf("screen: %ux%u\n", sw, sh);
@@ -218,24 +220,79 @@ int main(const int argc, const char **argv) {
     printf("scaled: %dx%d\n", scaled_width, scaled_height);
     printf("offset: %dx%d\n", x_offset, y_offset);
 
-    // write the pixels to the XImage
-    for (int y = 0; y < sh; y++) {
-        const int sy = (int)((y - y_offset) / scale);
+    // resample the image into a scaled buffer
+    unsigned char *dst = calloc(1, (size_t)scaled_width * scaled_height * 3);
 
-        if (sy < 0 || sy >= (int)height) continue;
+    if (!dst) {
+        fprintf(stderr, "out of memory\n");
+        XDestroyImage(image);
+        XFreeGC(display, gc);
+        XFreePixmap(display, pixmap);
+        XCloseDisplay(display);
+        stbi_image_free(src);
+        return EX_OSERR;
+    }
 
-        for (int x = 0; x < sw; x++) {
-            const int sx = (int)((x - x_offset) / scale);
+    for (unsigned int dy = 0; dy < scaled_height; dy++) {
+        for (unsigned int dx = 0; dx < scaled_width; dx++) {
+            unsigned char *out = dst + ((size_t)dy * scaled_width + dx) * 3;
 
-            if (sx < 0 || sx >= (int)width) continue;
+            if (scale >= 1.0f) {
+                // upscaling: pick the nearest source pixel
+                const unsigned int sx = (int)((float)dx / scale);
+                const unsigned int sy = (int)((float)dy / scale);
 
-            const size_t index = ((size_t)sy * width + sx) * 3;
+                const unsigned char *p = src + ((size_t)sy * width + sx) * 3;
+                out[0] = p[0];
+                out[1] = p[1];
+                out[2] = p[2];
+            } else {
+                // downscaling: average the source region this pixel covers
+                const float x0 = (float)dx / scale;
+                const float x1 = (float)(dx + 1) / scale;
+                const float y0 = (float)dy / scale;
+                const float y1 = (float)(dy + 1) / scale;
 
-            const unsigned char *p = src + index;
+                const unsigned int x_lo = (int)x0;
+                const unsigned int x_hi = x1 > (float)width ? width : (int)x1;
+                const unsigned int y_lo = (int)y0;
+                const unsigned int y_hi = y1 > (float)height ? height : (int)y1;
+
+                unsigned long r = 0, g = 0, b = 0;
+                unsigned long n = 0;
+
+                for (unsigned int sy = y_lo; sy < y_hi; sy++) {
+                    for (unsigned int sx = x_lo; sx < x_hi; sx++) {
+                        const unsigned char *p = src + ((size_t)sy * width + sx) * 3;
+                        r += p[0];
+                        g += p[1];
+                        b += p[2];
+                        n++;
+                    }
+                }
+
+                if (n == 0) continue;
+
+                out[0] = (unsigned char)(r / n);
+                out[1] = (unsigned char)(g / n);
+                out[2] = (unsigned char)(b / n);
+            }
+        }
+    }
+
+    // blit the scaled image onto the XImage
+    const int blit_x0 = x_offset < 0 ? -x_offset : 0;
+    const int blit_y0 = y_offset < 0 ? -y_offset : 0;
+    const int blit_x1 = scaled_width < sw - x_offset ? scaled_width : sw - x_offset;
+    const int blit_y1 = scaled_height < sh - y_offset ? scaled_height : sh - y_offset;
+
+    for (int dy = blit_y0; dy < blit_y1; dy++) {
+        for (int dx = blit_x0; dx < blit_x1; dx++) {
+            const unsigned char *p = dst + ((size_t)dy * scaled_width + dx) * 3;
 
             const unsigned long pixel = pack_pixel(p[0], p[1], p[2], visual);
 
-            XPutPixel(image, x, y, pixel);
+            XPutPixel(image, x_offset + dx, y_offset + dy, pixel);
         }
     }
 
@@ -264,6 +321,7 @@ int main(const int argc, const char **argv) {
     // the next wallpaper is installed.
     XDestroyImage(image);
     XFreeGC(display, gc);
+    free(dst);
     stbi_image_free(src);
 
     XCloseDisplay(display);
