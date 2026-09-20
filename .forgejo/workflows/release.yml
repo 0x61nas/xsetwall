@@ -22,10 +22,10 @@ jobs:
           ./x build
           mkdir -p build && mv xsetwall build/xsetwall-x86_64-linux-gnu
 
-      - name: Build for musl
-        run: |
-          ./x build-musl
-          mv xsetwall-musl build/xsetwall-x86_64-linux-musl
+      #- name: Build for musl
+      #  run: |
+       #   ./x build-musl
+        #  mv xsetwall-musl build/xsetwall-x86_64-linux-musl
 
       - name: Create release
         id: create_release
