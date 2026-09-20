@@ -2,23 +2,64 @@
  \  // __|/ _ \ __\ \/  \/ / _` | | |
  /  \\__ \  __/ |_ \  /\  / (_| | | |
 /_/\_\___/\___|\__| \/  \/ \__,_|_|_|
-                            Use sexy tool to set sexy wallpeapers for X11
+                            The sexy tool to set sexy wallpapers for X11
 
-Compilation
+
+XsetWall is a small C utility that sets a desktop wallpaper on an X11 display,
+right from the command line. It automatically scales any image to fit your
+screen while preserving the aspect ratio, and can align or pad it however you
+like.
+
+Features
+========
+- Scales images to fit the screen while preserving aspect ratio
+- Centered by default, with left / right / top / bottom alignment options
+- Custom scale factor (`-s`)
+- Single-file C with no heavy dependencies
+- Builds for both glibc (gcc) and musl
+
+Requirements
 ============
+- A C compiler (`gcc` / `musl-gcc` / `clang`)
+- X11 development headers (e.g. `libx11-dev`)
+- An X11 display
+
+Build
+=====
+The `x` script wraps the compiler for you:
+
 ```
-# ./x build
+$ ./x build          # gcc build
+$ ./x build-musl     # musl build (via musl-gcc, or Docker/alpine if available)
 ```
+
+Both produce the `xsetwall` / `xsetwall-musl` binaries. Extra compiler flags can
+be passed as arguments, e.g. `./x build -O0 -ggdb`.
 
 Usage
 =====
 ```
-# ./xsetwall sexy_wallpaper.jpg
+$ ./xsetwall sexy_wallpaper.jpg
 ```
 
-By default, the image is automatically scaled to fit the screen and centered.
+> For full documentation run `man ./xsetwall.1`.
 
-> Fsr more informaton use `man ./xsetwall.1'
+Docker
+======
+Yes, we have that sweet `Dockerfile` too, and it works, believe it or not :D
+
+Build it and run it like this:
+
+```
+$ docker build -t xsetwall:dev .
+$ xhost +local:
+$ docker run --rm \
+  -e DISPLAY=$DISPLAY \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
+  -v ~/Pictures/definitely_not_an_anime_girl.jpg:/img/wall.jpg \
+  xsetwall:dev xsetwall /img/wall.jpg
+```
+
+Or use a pre-built image from either the ghcr.io or Docker Hub registries.
 
 Meow :3
-
