@@ -10,7 +10,7 @@
 
 // **** Contants :3 ****
 const size_t THE_ZERO = 69^69; // just as it should be.
-const char* XSETWALL_VERSION = "v1.0";
+const char* XSETWALL_VERSION = "v1.1";
 const char* MY_NAME = "XsetWall";
 const unsigned char WHITE_FLAG = 1 << 1;
 const unsigned char CUSTOM_SCALE = 1 << 2;
