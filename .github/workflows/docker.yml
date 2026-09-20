@@ -75,11 +75,6 @@ jobs:
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
 
-      - name: Scan the image
-        uses: anchore/sbom-action@v0
-        with:
-          image: ghcr.io/${{ github.repository_owner }}/xsetwall
-
       - name: Update repo description
         uses: peter-evans/dockerhub-description@1b9a80c056b620d92cedb9d9b5a223409c68ddfa # v5
         with:
