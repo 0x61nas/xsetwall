@@ -315,7 +315,7 @@ int main(const int argc, const char **argv) {
 
     // The XSetCloseDownMode() defines what will happen to the client's resources at connection close. A connection starts in DestroyAll mode.
     // For information on what happens to the client's resources when the close_mode argument is RetainPermanent or RetainTemporary.
-    XSetCloseDownMode(display, RetainPermanent);
+    //XSetCloseDownMode(display, RetainPermanent);
 
     // The root window owns the pixmap now. Keep it around until
     // the next wallpaper is installed.
@@ -325,6 +325,6 @@ int main(const int argc, const char **argv) {
     stbi_image_free(src);
 
     XCloseDisplay(display);
-    return 0;
+    return EXIT_SUCCESS;
 }
 // Stay Silly :3
